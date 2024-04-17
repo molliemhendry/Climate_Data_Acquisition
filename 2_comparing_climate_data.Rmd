@@ -1,0 +1,59 @@
+---
+title: "2 comparing climate data"
+author: "Matthew Ross"
+date: "2024-04-17"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(tidyverse)
+library(lubridate)
+library(RcppRoll)
+
+gldas_dir = 'data/GLDAS/'
+
+if(!file.exists(gldas_dir)){
+  dir.create('data')
+  dir.create(gldas_dir)
+}
+```
+
+
+# Assignment
+
+
+For this assignment we are going to compare climate data from a single point 
+versus a watershed averaged climate data. We will be working over the Yampa river
+watershed, one of the last undammed watersheds in the USA. 
+
+## Point-climate acquisition. 
+
+Using the 1_climate_data_yojoa.Rmd as an example download at least two types of climate (wind/temp/etc...) GLDAS data for the
+Yampa River above Elkhead Creek. This is the site of a USGS gage that has data
+dating back to 2004. 
+
+```{r}
+site_info <- tibble(site_no = '09244490',
+                    lat = 40.5180278,
+                    long = -107.3997838,
+                    name = 'Yampa_hayden')
+```
+
+
+
+## Watershed averaged climate data
+
+Using climate engine, download the two same parameters but for the watershed.
+The watershed is stored as a .geojson in the yampa folder. Note, you likely need
+to convert the watershed to a ".shp" file before getting the data from climate 
+engine. 
+
+
+## Compare your climate data anyway you want
+
+Make at least two plots comparing your point versus watershed-averaged climate data. 
+
+
+
