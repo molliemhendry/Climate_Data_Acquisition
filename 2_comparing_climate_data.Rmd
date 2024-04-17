@@ -39,8 +39,69 @@ site_info <- tibble(site_no = '09244490',
                     lat = 40.5180278,
                     long = -107.3997838,
                     name = 'Yampa_hayden')
-```
 
+
+#set parameters of function - these are found on the data rods website linked above
+gldas_mod = 'GLDAS_NOAH025_3H_v2.1'
+params = c('Wind_f_inst', 'Tair_f_inst', 'Rainf_f_tavg')
+
+#time period of interest - v 2.0 and v 2.1 have different time periods of coverage, and to keep the download from hanging, you have to have separate start/end dates
+start_date_2.1 = '2004-01-01'
+end_date_2.1 = '2020-12-31'
+
+#GLDAS data are in 0.25 degree increments
+lat = 40.5180278
+lon = -107.3997838
+
+#function to make wwws to ping
+make_www_2.1 = function(model, var){#, s_d, e_d, lat, lon) {
+  s_d = start_date_2.1
+  e_d = end_date_2.1
+  paste0('https://hydro1.gesdisc.eosdis.nasa.gov/daac-bin/access/timeseries.cgi?variable=GLDAS2:', model, ':', var, '&startDate=', s_d, 'T00:00&endDate=', e_d, 'T21:00&location=GEOM:POINT(', lon, ',%20', lat, ')&type=asc2')
+}
+
+
+#make a list of all wwws for download
+v2.1_www = unlist(map2(rep(gldas_mod[1], times = length(params)), params, make_www_2.1))
+
+
+#download
+for(w20 in 1:length(v2.1_www)) {
+  download.file(url = v2.1_www[w20], destfile = file.path(gldas_dir, paste0(rep(gldas_mod[1], length(params))[w20], '_', params[w20], '.csv')))
+}
+
+#make list of files fo GLDAS data
+files = list.files(gldas_dir)
+
+
+formatGLDAS = function(file = files[1]){
+  f = read.delim(file.path(gldas_dir, file), skip = 12, sep = '\t')
+  colnames(f) = 'data'
+  f = f %>%
+    rownames_to_column('datetime') %>% 
+    mutate(data = as.character(data),
+           datetime = as.character(datetime),
+           parameter = unlist(str_split(file, pattern = '_'))[5],
+           version = unlist(str_split(file, pattern = '_'))[4])
+  return(f)
+}
+
+
+all_gldas = map_dfr(files, formatGLDAS) %>% 
+  mutate(datetime_gmt = as.POSIXct(datetime, tz = 'Etc/GMT+0'),
+         data = as.numeric(data)) %>%
+  arrange(datetime_gmt)
+
+View(all_gldas)
+
+#plot for reality check
+ggplot(all_gldas %>%
+         sample_frac(0.05), aes(x = datetime_gmt, y = data)) +
+  geom_point() +
+  facet_grid(parameter ~ ., scales = 'free_y') +
+  theme_bw()
+
+```
 
 
 ## Watershed averaged climate data
@@ -50,10 +111,34 @@ The watershed is stored as a .geojson in the yampa folder. Note, you likely need
 to convert the watershed to a ".shp" file before getting the data from climate 
 engine. 
 
+```{r}
+
+library(sf)
+
+
+
+yampa <- st_read("data/yampa/yampa.geojson")
+
+yampa<- yampa[2,] %>%
+  st_transform(2163)
+
+y_simple <- st_simplify(yampa, preserveTopology = T,
+                        dTolerance = 100)
+
+mapview(yampa)
+
+st_write(yampa[2,], "data/yampa/yampa.shp")
+```
+
 
 ## Compare your climate data anyway you want
 
 Make at least two plots comparing your point versus watershed-averaged climate data. 
 
+```{r}
+
+
+
+```
 
 
